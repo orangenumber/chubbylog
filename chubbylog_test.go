@@ -34,11 +34,15 @@ func Benchmark_ChubbyLog_Printf(b *testing.B) {
 }
 func Benchmark_ChubbyLog_Printf_Buf(b *testing.B) {
 	b.StartTimer()
-	out, err := os.Create("./tmp/chubby_buf.txt")
-	if err != nil {
-		println(err.Error())
-	}
-	x := chubbylog.New(out, chubbylog.F_DATE|chubbylog.F_TIME|chubbylog.F_PREFIX|chubbylog.F_USE_BUF_2K)
+	outInfo, _ := os.Create("./tmp/chubby_info_buf.txt")
+	outWarn, _ := os.Create("./tmp/chubby_warn_buf.txt")
+	outError, _ := os.Create("./tmp/chubby_error_buf.txt")
+
+	x := chubbylog.New(nil, chubbylog.F_STD|chubbylog.F_USE_BUF_2K)
+	x.GetInfo().SetOutput(outInfo)
+	x.GetWarn().SetOutput(outWarn)
+	x.GetError().SetOutput(outError)
+	x.GetFatal().SetFlag(chubbylog.F_STD)
 
 	for i := 0; i < b.N; i++ {
 		switch i % 3 {
