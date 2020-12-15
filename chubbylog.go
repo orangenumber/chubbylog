@@ -23,12 +23,22 @@ const F_STD = alog.F_STD
 // CHUBBY LOG
 // =====================================================================================================================
 type AChubbyLogger struct {
+	debug *alog.ALogger
 	info  *alog.ALogger
 	warn  *alog.ALogger
 	error *alog.ALogger
 	fatal *alog.ALogger
 }
 
+func (l *AChubbyLogger) Debug(s ...interface{}) {
+	l.debug.Print(s...)
+}
+func (l *AChubbyLogger) Debugf(format string, s ...interface{}) {
+	l.debug.Printf(format, s...)
+}
+func (l *AChubbyLogger) Debugj(prefix string, a interface{}) {
+	l.debug.Printj(prefix, a)
+}
 func (l *AChubbyLogger) Info(s ...interface{}) {
 	l.info.Print(s...)
 }
@@ -73,6 +83,9 @@ func (l *AChubbyLogger) Fatalj(prefix string, a interface{}) {
 	l.close()
 	os.Exit(1)
 }
+func (l *AChubbyLogger) GetDebug() *alog.ALogger {
+	return l.debug
+}
 func (l *AChubbyLogger) GetInfo() *alog.ALogger {
 	return l.info
 }
@@ -95,15 +108,27 @@ func (l *AChubbyLogger) ToSyslog(name string) error {
 		acl.SetPrefix("") // syslog already have prefix
 		return nil
 	}
-	if err := fSyslog(l.info, syslog.LOG_INFO); err != nil { return err }
-	if err := fSyslog(l.warn, syslog.LOG_WARNING); err != nil { return err }
-	if err := fSyslog(l.error, syslog.LOG_ERR); err != nil { return err }
-	if err := fSyslog(l.fatal, syslog.LOG_CRIT); err != nil { return err }
+	if err := fSyslog(l.debug, syslog.LOG_DEBUG); err != nil {
+		return err
+	}
+	if err := fSyslog(l.info, syslog.LOG_INFO); err != nil {
+		return err
+	}
+	if err := fSyslog(l.warn, syslog.LOG_WARNING); err != nil {
+		return err
+	}
+	if err := fSyslog(l.error, syslog.LOG_ERR); err != nil {
+		return err
+	}
+	if err := fSyslog(l.fatal, syslog.LOG_CRIT); err != nil {
+		return err
+	}
 
 	return nil
 }
 
 func (l *AChubbyLogger) close() {
+	l.debug.Close()
 	l.info.Close()
 	l.warn.Close()
 	l.error.Close()
@@ -115,6 +140,7 @@ func New(output io.Writer, flag uint16) *AChubbyLogger {
 	}
 
 	return &AChubbyLogger{
+		debug: alog.New(output, "[DEBUG]  ", flag),
 		info:  alog.New(output, "[INFO]  ", flag),
 		warn:  alog.New(output, "[WARN]  ", flag),
 		error: alog.New(output, "[ERROR] ", flag),
